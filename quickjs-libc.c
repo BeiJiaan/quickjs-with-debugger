@@ -47,7 +47,11 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
-#if defined(__FreeBSD__)
+#if defined(__clang__)
+typedef __sighandler_t sighandler_t;
+#endif
+
+#if defined(__FreeBSD__) || defined(__clang__)
 extern char **environ;
 #endif
 

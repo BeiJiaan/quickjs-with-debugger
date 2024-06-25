@@ -149,6 +149,12 @@ DEFINES+=-DHAVE_CLOSEFROM
 endif
 endif
 
+#DEFINES+=-DDUMP_OBJECTS
+#DEFINES+=-DDUMP_ATOMS
+#DEFINES+=-DDUMP_SHAPES
+DEFINES+=-DDUMP_LEAKS
+#DEFINES+=-DDUMP_GC_FREE
+
 CFLAGS+=$(DEFINES)
 CFLAGS_DEBUG=$(CFLAGS) -O0
 CFLAGS_SMALL=$(CFLAGS) -Os
@@ -192,7 +198,7 @@ CONFIG_SHARED_LIBS=y # building shared libraries is supported
 endif
 endif
 
-PROGS=qjs$(EXE) qjsc$(EXE) run-test262
+PROGS=qjs$(EXE) qjsc$(EXE) qjs-debug$(EXE) run-test262
 ifneq ($(CROSS_PREFIX),)
 QJSC_CC=gcc
 QJSC=./host-qjsc
@@ -229,6 +235,14 @@ endif
 all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/qjs.check.o $(PROGS)
 
 QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
+
+# debugger
+QJS_LIB_OBJS+=$(OBJDIR)/quickjs-debugger.o
+ifndef CONFIG_WIN32
+QJS_LIB_OBJS+=$(OBJDIR)/quickjs-debugger-transport-unix.o
+else
+QJS_LIB_OBJS+=$(OBJDIR)/quickjs-debugger-transport-win.o
+endif
 
 QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
 ifdef CONFIG_BIGNUM
@@ -382,15 +396,14 @@ clean:
 install: all
 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
 	$(STRIP) qjs$(EXE) qjsc$(EXE)
-	install -m755 qjs$(EXE) qjsc$(EXE) "$(DESTDIR)$(PREFIX)/bin"
+	install -m755 qjs$(EXE) qjsc$(EXE) qjs-debug$(EXE) "$(DESTDIR)$(PREFIX)/bin"
 	ln -sf qjs$(EXE) "$(DESTDIR)$(PREFIX)/bin/qjscalc$(EXE)"
-	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
-	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
+	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib"
 ifdef CONFIG_LTO
-	install -m644 libquickjs.lto.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
+	install -m644 libquickjs.lto.a "$(DESTDIR)$(PREFIX)/lib"
 endif
 	mkdir -p "$(DESTDIR)$(PREFIX)/include/quickjs"
-	install -m644 quickjs.h quickjs-libc.h "$(DESTDIR)$(PREFIX)/include/quickjs"
+	install -m644 config.h quickjs.h quickjs-libc.h quickjs-debugger.h "$(DESTDIR)$(PREFIX)/include/quickjs"
 
 ###############################################################################
 # examples
