@@ -82,6 +82,10 @@ typedef sig_t sighandler_t;
 #include "list.h"
 #include "quickjs-libc.h"
 
+#if !defined(PATH_MAX)
+#define PATH_MAX 4096
+#endif
+
 /* TODO:
    - add socket calls
 */
@@ -1094,7 +1098,7 @@ static JSValue js_std_file_tell(JSContext *ctx, JSValueConst this_val,
     int64_t pos;
     if (!f)
         return JS_EXCEPTION;
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GLIBC__)
     pos = ftello(f);
 #else
     pos = ftell(f);
@@ -1117,7 +1121,7 @@ static JSValue js_std_file_seek(JSContext *ctx, JSValueConst this_val,
         return JS_EXCEPTION;
     if (JS_ToInt32(ctx, &whence, argv[1]))
         return JS_EXCEPTION;
-#if defined(__linux__)
+#if defined(__linux__) || defined(__GLIBC__)
     ret = fseeko(f, pos, whence);
 #else
     ret = fseek(f, pos, whence);
